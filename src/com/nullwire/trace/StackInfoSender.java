@@ -14,7 +14,7 @@ public interface StackInfoSender {
 	/**
 	 * This method will be called during application startup if there are crash reports
 	 * saved to phone memory from a previous application run. It is called on
-	 * the same thread that {@link ExceptionHandler.register} is called from.
+	 * the same thread that {@link ExceptionHandler::register} is called from.
 	 * <p>
 	 * android-remote-stacktrace clears the crash reports from the device once
 	 * it calls this method, so it won't be called multiple times for the same
@@ -24,6 +24,6 @@ public interface StackInfoSender {
 	 * @param packageName The application package name, if your application wants to save it with
 	 * the stacktraces.
 	 */
-	public void submitStackInfos(Collection<StackInfo> stackInfos, String packageName);
+	void submitStackInfos(Collection<StackInfo> stackInfos, String packageName);
 	
 }

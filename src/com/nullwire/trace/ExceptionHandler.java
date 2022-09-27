@@ -84,7 +84,7 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 	private final String mAppVersion;
 	private final boolean mDebug;
 
-	private static final String TAG = "CollectingExceptionHandler";
+	private static final String TAG = "ExceptionHandler";
 
 	private static String[] stackTraceFileList = null;
 	
@@ -94,7 +94,7 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 	 * and disables debug.
 	 * @param context Android Context to use to resolve information about the application
 	 * @param url The url to POST stack traces to.
-	 * @return
+	 * @return true if old stack traces were found.
 	 */
 	public static boolean register(Context context, String url) {
 		return register(context, new HttpPostStackInfoSender(url), false);
@@ -118,7 +118,7 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 		Log.i(TAG, "Registering default exceptions handler");
 		// Files dir for storing the stack trace
 		final String filePath = context.getDir("stacktraces", 0).getAbsolutePath();
-		PackageInfo packageInfo = null;
+		PackageInfo packageInfo;
 		try {
 			packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
 		} catch (NameNotFoundException e) {
@@ -127,11 +127,8 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 		}
 		final String appVersion = packageInfo.versionName;
 
-		boolean stackTracesFound = false;
 		// We'll return true if any stack traces were found
-		if (searchForStackTraces(filePath).length > 0) {
-			stackTracesFound = true;
-		}
+		boolean stackTracesFound = (searchForStackTraces(filePath).length > 0);
 
 		// First of all transmit any stack traces that may be lying around
 		// This must be called from the UI thread as it may trigger an analytics flush
@@ -161,7 +158,7 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 	/**
 	 * Search for stack trace files.  This method is unchanged
 	 * from android-remote-stacktrace
-	 * @return
+	 * @return a list of stack traces.
 	 */
 	private static String[] searchForStackTraces(String filePath) {
 		if (stackTraceFileList != null) {
@@ -202,15 +199,15 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 				if (debug) {
 					Log.d(TAG, "Found " + list.length + " stacktrace(s)");
 				}
-				ArrayList<StackInfo> stackInfos = new ArrayList<StackInfo>(list.length);
-				for (int i=0; i < list.length; i++) {
-					String filePath = filesPath + "/" + list[i];
+				ArrayList<StackInfo> stackInfos = new ArrayList<>(list.length);
+				for (String s : list) {
+					String filePath = filesPath + "/" + s;
 					// Extract the version from the filename: "packagename-version-...."
-					String version = list[i].substring(0, list[i].lastIndexOf('-')); 
+					String version = s.substring(0, s.lastIndexOf('-'));
 					if (debug) {
 						Log.d(TAG, "Stacktrace in file '" + filePath + "' belongs to version " + version);
 					}
-					BufferedReader input =  new BufferedReader(new FileReader(filePath));
+					BufferedReader input = new BufferedReader(new FileReader(filePath));
 					String phoneModel = null;
 					String buildVersion = null;
 					String exceptionType = null;
@@ -221,15 +218,15 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 					StackInfo rootInfo = null;
 					StackInfo currentInfo = null;
 					try {
-						String line = null;
+						String line;
 						while ((line = input.readLine()) != null) {
 							if (!currentVersion) {
 								currentVersion = CURRENT_VERSION.equals(line);
+								if (!currentVersion) {
+									Log.i(TAG, "file did not contain valid version" + line);
+									return;
+								}
 								continue;
-							}
-							if (!currentVersion) {
-								Log.i(TAG, "file did not contain valid version" + line);
-								return;
 							}
 							if (phoneModel == null) {
 								phoneModel = line;
@@ -253,16 +250,16 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 								continue;
 							}
 							if (currentInfo == null) {
-								rootInfo = currentInfo = new StackInfo(version, phoneModel, buildVersion, exceptionType, thread, message, new ArrayList<StackTraceElement>());
+								rootInfo = currentInfo = new StackInfo(version, phoneModel, buildVersion, exceptionType, thread, message, new ArrayList<>());
 							}
 							if (hasCause) {
-								StackInfo cause = new StackInfo(version, phoneModel, buildVersion, exceptionType, thread, message, new ArrayList<StackTraceElement>());
+								StackInfo cause = new StackInfo(version, phoneModel, buildVersion, exceptionType, thread, message, new ArrayList<>());
 								currentInfo.addCause(cause);
 								currentInfo = cause;
 								hasCause = false;
 							}
 							String[] parts = line.split(",");
-							StackTraceElement element = new StackTraceElement(parts[0], parts[1], parts[2], Integer.valueOf(parts[3]));
+							StackTraceElement element = new StackTraceElement(parts[0], parts[1], parts[2], Integer.parseInt(parts[3]));
 							currentInfo.getStacktrace().add(element);
 						}
 					} finally {
@@ -285,7 +282,7 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 			Log.e(TAG, "Something really bad just happened that we weren't expecting", e);
 		} finally {
 			try {
-				for (File stack : new File(filesPath + "/").listFiles()) {
+				for (File stack : new File(filesPath).listFiles()) {
 					if (debug) {
 						Log.v(TAG, "Deleting stack at: " + stack.getAbsolutePath());
 					}
@@ -329,10 +326,10 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
 			}
 
 			// Walk through potential filenames until we find an unused one (should rarely loop)
-			File file = null;
+			File file;
 			int count = 0;
 			do {
-				String filename = mAppVersion + "-" + Integer.toString(count);
+				String filename = mAppVersion + "-" + count;
 				file = new File(mFilePath + "/" + filename + ".stacktrace");
 				count++;
 			} while (file.exists());
