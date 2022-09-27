@@ -49,14 +49,10 @@ At `http://your.domain/path` the client side implementation will expect to find 
 
 The JAR may be built by issuing the following command:
 
-    ant jar
+    make trace.jar
 
 This will produce a trace.jar file.
 
-Cleaning up is done by:
-
-    ant clean
-    
 ## Support
 
 If you have problems, feel free to drop me a mail at mads.kristiansen@nullwire.com.
