@@ -52,6 +52,8 @@ public class HttpPostStackInfoSender implements StackInfoSender {
 						multipart.addFormField("package_version", info.getPackageVersion());
 						multipart.addFormField("phone_model", info.getPhoneModel());
 						multipart.addFormField("android_version", info.getAndroidVersion());
+						multipart.addFormField("message", info.getMessage());
+						multipart.addFormField("exception_type", info.getExceptionType());
 						multipart.addFormField("stacktrace", TextUtils.join("\n", info.getStacktrace()));
 						multipart.finish();
 					} catch (IOException e) {
