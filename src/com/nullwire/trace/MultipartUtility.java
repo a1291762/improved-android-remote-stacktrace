@@ -100,6 +100,8 @@ public class MultipartUtility {
             }
             reader.close();
             httpConn.disconnect();
+        } else if (status == HttpURLConnection.HTTP_NO_CONTENT) {
+            httpConn.disconnect();
         } else {
             throw new IOException("Server returned non-OK status: " + status);
         }
