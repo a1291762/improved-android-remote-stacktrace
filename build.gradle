@@ -5,7 +5,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.1'
+        classpath 'com.android.tools.build:gradle:8.0.2'
     }
 }
 
@@ -19,17 +19,17 @@ allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     def code = 1
 
     defaultConfig {
         versionCode code
         versionName "1.0 (" + code + ")"
-        //applicationId "com.nullwire.trace"
-        minSdkVersion 14
-        targetSdkVersion 31
+        minSdkVersion 23
+        targetSdkVersion 33
     }
+    namespace 'com.nullwire.trace'
 
     buildTypes {
         release {
@@ -78,6 +78,10 @@ android {
         // by a similar customization.
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
+    }
+    buildFeatures {
+        renderScript true
+        aidl true
     }
 }
 
